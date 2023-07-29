@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TECHNOPONICS - Table</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="styles.css?v=3">
+  <style>
+      .pagination-button {
+          background-color: #4CAF50;
+          border: none;
+          color: white;
+          padding: 8px 16px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 14px;
+          margin: 4px 2px;
+          cursor: pointer;
+        }
+        
+        .pagination-button.disabled {
+          background-color: #CCCCCC;
+          cursor: not-allowed;
+        }
+        .pagination-input {
+          text-align: center;
+          width: 50px;
+          padding: 4px;
+        }
+
+  </style>
+  <script>
+    var currentPage = 1;
+      
+    function download() {
+      var startDate = document.getElementById('startDate').value;
+      var endDate = document.getElementById('endDate').value;
+      window.location.href = 'download.php?sDate=' + startDate + '&eDate=' + endDate + '&sTime=00:00:00&eTime=23:59:59';
+    }
+      
+    function fetchData() {
+      var startDate = document.getElementById('startDate').value;
+      var endDate = document.getElementById('endDate').value;
+      var query = "";
+
+      if (startDate == null && endDate == null) {
+          query = 'fetch_data.php?';
+          console.log("EMPTY");
+      } else {
+          query = 'fetch_data.php?start=' + startDate + '&end=' + endDate;
+          console.log("NOT EMPTY");
+      }
+
+      console.log(startDate);
+      console.log(endDate);
+
+      // Make the API call with the selected dates
+      fetch(query)
+        .then(function (response) {
+          return response.json();
+        })
+        .then(function (data) {
+          renderTable(data);
+        })
+        .catch(function (error) {
+          console.log('Error fetching data:', error);
+        });
+    }
+    
+function renderTable(data) {
+  var tableData = data.tableData.reverse();
+
+  var rowsPerPage = 20;
+  var startIndex = (currentPage - 1) * rowsPerPage;
+  var endIndex = currentPage * rowsPerPage;
+
+  var tableBody = document.querySelector('#tableBody');
+
+  tableBody.innerHTML = '';
+
+  var pageData = tableData.slice(startIndex, endIndex);
+  pageData.forEach(function (entry) {
+    var row = document.createElement('tr');
+
+    var dateCell = document.createElement('td');
+    dateCell.textContent = entry.date;
+    row.appendChild(dateCell);
+
+    var timeCell = document.createElement('td');
+    timeCell.textContent = entry.time;
+    row.appendChild(timeCell);
+
+    var waterTempCell = document.createElement('td');
+    var waterTempSymbol = document.createElement('span');
+    waterTempSymbol.textContent = getSymbolByColor(getTemperatureColor(entry.water_temperature));
+    waterTempSymbol.style.color = getTemperatureColor(entry.water_temperature);
+    waterTempCell.appendChild(waterTempSymbol);
+    waterTempCell.innerHTML += entry.water_temperature;
+    row.appendChild(waterTempCell);
+
+    var airTempCell = document.createElement('td');
+    var airTempSymbol = document.createElement('span');
+    airTempSymbol.textContent = getSymbolByColor(getTemperatureColor(entry.air_temperature));
+    airTempSymbol.style.color = getTemperatureColor(entry.air_temperature);
+    airTempCell.appendChild(airTempSymbol);
+    airTempCell.innerHTML += entry.air_temperature;
+    row.appendChild(airTempCell);
+
+    var phLevelCell = document.createElement('td');
+    var phLevelSymbol = document.createElement('span');
+    phLevelSymbol.textContent = getSymbolByColor(getPhLevelColor(entry.ph_level));
+    phLevelSymbol.style.color = getPhLevelColor(entry.ph_level);
+    phLevelCell.appendChild(phLevelSymbol);
+    phLevelCell.innerHTML += entry.ph_level;
+    row.appendChild(phLevelCell);
+
+    tableBody.appendChild(row);
+  });
+
+  addPaginationControls(tableData.length);
+}
+
+function getTemperatureColor(temperature) {
+  if (temperature < 10) {
+    return 'blue';
+  } else if (temperature >= 10 && temperature < 15) {
+    return 'DodgerBlue';
+  } else if (temperature >= 15 && temperature < 33) {
+    return 'green';
+  } else if (temperature >= 33 && temperature < 35) {
+    return 'orange';
+  } else {
+    return 'red';
+  }
+}
+
+function getPhLevelColor(phLevel) {
+  if (phLevel < 5.0) {
+    return 'red';
+  } else if (phLevel >= 5.0 && phLevel < 6.5) {
+    return 'orange';
+  } else if (phLevel >= 6.5 && phLevel < 9.0) {
+    return 'green';
+  } else if (phLevel >= 9.0 && phLevel < 10.0) {
+    return 'DodgerBlue';
+  } else {
+    return 'SlateBlue';
+  }
+}
+
+function getSymbolByColor(color) {
+  if (color === 'green') {
+    return '\u25CF'; // Filled circle symbol
+  } else if (color === 'orange') {
+    return '\u25C6'; // Diamond symbol
+  } else {
+    return '\u25A0'; // Square symbol
+  }
+}
+
+
+
+function addPaginationControls(totalRows) {
+  var totalPages = Math.ceil(totalRows / 20);
+
+  var paginationContainer = document.querySelector('.pagination');
+  paginationContainer.innerHTML = '';
+
+
+
+var firstButton = createPaginationButton('First', 1);
+firstButton.classList.add('pagination-button');
+paginationContainer.appendChild(firstButton);
+
+var prevButton = createPaginationButton('Prev', currentPage - 1);
+prevButton.classList.add('pagination-button');
+paginationContainer.appendChild(prevButton);
+    
+    
+var pageSelector = document.createElement('input');
+pageSelector.type = 'number';
+pageSelector.min = 1;
+pageSelector.max = totalPages;
+pageSelector.value = currentPage;
+pageSelector.addEventListener('keyup', function (event) {
+  if (event.key === 'Enter') {
+    var inputPage = parseInt(pageSelector.value);
+    if (inputPage >= 1 && inputPage <= totalPages) {
+      currentPage = inputPage;
+      fetchData();
+    } else if (inputPage < 1) {
+      pageSelector.value = 1;
+      currentPage = 1;
+      fetchData(); 
+    } else if (inputPage > totalPages) {
+      pageSelector.value = totalPages; 
+      currentPage = totalPages;
+      fetchData();
+    }
+  }
+});
+paginationContainer.appendChild(pageSelector);
+
+pageSelector.classList.add('pagination-input');
+
+    
+    
+var nextButton = createPaginationButton('Next', currentPage + 1);
+nextButton.classList.add('pagination-button');
+paginationContainer.appendChild(nextButton);
+
+var lastButton = createPaginationButton('Last', totalPages);
+lastButton.classList.add('pagination-button');
+paginationContainer.appendChild(lastButton);
+
+if (currentPage > 1) {
+  firstButton.disabled = false;
+  prevButton.disabled = false;
+} else {
+  firstButton.disabled = true;
+  prevButton.disabled = true;
+  firstButton.classList.add('disabled');
+  prevButton.classList.add('disabled');
+}
+
+if (currentPage < totalPages) {
+  nextButton.disabled = false;
+  lastButton.disabled = false;
+} else {
+  nextButton.disabled = true;
+  lastButton.disabled = true;
+  nextButton.classList.add('disabled');
+  lastButton.classList.add('disabled');
+}
+
+}
+
+
+function createPaginationButton(text, pageNumber) {
+  var button = document.createElement('button');
+  button.textContent = text;
+  button.addEventListener('click', function () {
+    currentPage = pageNumber;
+    fetchData();
+  });
+  return button;
+}
+
+fetchData();
+  </script>
+</head>
+<body>
+  <center>
+    <h1>TECHNOPONICS</h1>
+    <a href="graphs.html" class="button">GO TO GRAPHED VIEW</a>
+    
+    <div class="content">
+  <div class="date-range-container">
+    <label for="startDate">Start Date:</label>
+    <input type="date" id="startDate">
+
+    <label for="endDate">End Date:</label>
+    <input type="date" id="endDate">
+
+    <button onclick="fetchData()" class="button">Apply</button>
+  </div>
+
+    <div class="button-container">
+      <button id="downloadButton" onclick="download()" class="button">Download Data from Date Range</button>
+    </div>
+    <div class="pagination"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Water Temperature</th>
+        <th>Air Temperature</th>
+        <th>pH Level</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <!-- Table rows will be dynamically added here -->
+    </tbody>
+  </table>
+
+</div>
+  </center>
+  <script>
+    fetchData();re
+  </script>
+
+
+
+<div>
+  <h2>Legends</h2>
+  <h3>Temperature</h3>
+  <span style="background-color: blue; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Cold - Temperature below 10°C <br>
+  <span style="background-color: DodgerBlue; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Cold - Temperature between 10°C and 15°C <br>
+  <span style="background-color: green; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></span> Good - Temperature between 15°C and 33°C <br>
+  <span style="background-color: orange; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Hot - Temperature between 33°C and 35°C <br>
+  <span style="background-color: red; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Hot - Temperature above 35°C <br>
+  <br>
+  <h3>pH Level</h3>
+  <span style="background-color: red; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Acidic - pH Level below 5.0 <br>
+  <span style="background-color: orange; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Acidic - pH Level between 5.0 and 6.5 <br>
+  <span style="background-color: green; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></span> Good - pH Level between 6.5 and 9.0 <br>
+  <span style="background-color: DodgerBlue; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Dirty - pH Level between 9.0 and 10.0 <br>
+  <span style="background-color: SlateBlue; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Dirty - pH Level above 10.0 <br>
+</div>
+  
+</body>
+</html>

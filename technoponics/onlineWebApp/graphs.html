@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>TECHNOPONICS - Graphs</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="styles.css?v=3">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+      
+  </style>
+  
+  <script>
+  
+  
+    function download() {
+      var startDate = document.getElementById('startDate').value;
+      var endDate = document.getElementById('endDate').value;
+      window.location.href = 'download.php?sDate=' + startDate + '&eDate=' + endDate + '&sTime=00:00:00&eTime=23:59:59';
+    }
+  
+var waterTempChart, airTempChart, phLevelChart;
+  
+function fetchData() {
+      var startDate = document.getElementById('startDate').value;
+      var endDate = document.getElementById('endDate').value;
+      var query = ""
+      if((startDate) == null && (endDate) == null){
+          query = 'fetch_data.php?';
+          console.log("EMPTY");
+      } else{
+          query = 'fetch_data.php?start=' + startDate + '&end=' + endDate;
+          console.log("NOT EMPTY");
+      }
+      
+    console.log(startDate);
+    console.log(endDate);
+      // Make the API call with the selected dates
+      fetch(query)
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (data) {
+        destroyCharts();
+      renderGraphs(data);
+    })
+    .catch(function (error) {
+      console.log('Error fetching data:', error);
+    });
+}
+
+var isRecentData = false; // Track if recent data is being displayed
+
+function getRecent() {
+  if (isRecentData) {
+    fetchData(); 
+    document.getElementById('toggle').textContent = 'View Most Recent';
+  } else {
+    fetch('getRecent.php?')
+      .then(function (response) {
+        return response.json();
+      })
+      .then(function (data) {
+        destroyCharts();
+        renderGraphs(data);
+      })
+      .catch(function (error) {
+        console.log('Error fetching data:', error);
+      });
+    document.getElementById('toggle').textContent = 'View All Data';
+  }
+  isRecentData = !isRecentData; 
+}
+
+
+
+
+function destroyCharts() {
+  if (waterTempChart) {
+    waterTempChart.destroy();
+  }
+  if (airTempChart) {
+    airTempChart.destroy();
+  }
+  if (phLevelChart) {
+    phLevelChart.destroy();
+  }
+}
+
+
+
+function renderGraphs(data) {
+  var graphData = data.graphData;
+
+  var dates = graphData.map(function (entry) {
+    return entry.date + ' ' + entry.time;
+  });
+  var times = graphData.map(function (entry) {
+    return entry.time;
+  });
+  var waterTemps = graphData.map(function (entry) {
+    return entry.water_temperature;
+  });
+  var airTemps = graphData.map(function (entry) {
+    return entry.air_temperature;
+  });
+  var phLevels = graphData.map(function (entry) {
+    return entry.ph_level;
+  });
+
+  var waterTempColors = waterTemps.map(function (temp) {
+    if (temp < 10) {
+      return 'blue'; // Very Bad: Below 10°C
+    } else if (temp >= 10 && temp < 15) {
+      return 'DodgerBlue'; // Bad: 10-15°C
+    } else if (temp >= 15 && temp < 33) {
+      return 'green'; // Good: 15-33°C
+    } else if (temp >= 33 && temp < 35) {
+      return 'orange'; // Bad: 33-35°C
+    } else {
+      return 'red'; // Very Bad: Above 35°C
+    }
+  });
+
+  var airTempColors = airTemps.map(function (temp) {
+    if (temp < 10) {
+      return 'blue'; // Very Bad: Below 10°C
+    } else if (temp >= 10 && temp < 15) {
+      return 'DodgerBlue'; // Bad: 10-15°C
+    } else if (temp >= 15 && temp < 33) {
+      return 'green'; // Good: 15-33°C
+    } else if (temp >= 33 && temp < 35) {
+      return 'orange'; // Bad: 33-35°C
+    } else {
+      return 'red'; // Very Bad: Above 35°C
+    }
+  });
+
+  // pH Level color coding
+  var phLevelColors = phLevels.map(function (ph) {
+    if (ph < 5.0) {
+      return 'red'; // Very Bad: Below 5.0
+    } else if (ph >= 5.0 && ph < 6.5) {
+      return 'orange'; // Bad: 5.0-6.5
+    } else if (ph >= 6.5 && ph < 9.0) {
+      return 'green'; // Good: 6.5-9.0
+    } else if (ph >= 9.0 && ph <= 10.0) {
+      return 'DodgerBlue'; // Bad: 9.0-10.0
+    } else {
+      return 'SlateBlue'; // Very Bad: Above 10.0
+    }
+  });
+
+// Water Temperature Chart
+var waterTempCtx = document.getElementById('waterTempChart').getContext('2d');
+waterTempChart = new Chart(waterTempCtx, {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'Water Temperature',
+      data: waterTemps,
+      borderColor: 'black',
+      pointBackgroundColor: waterTempColors,
+      pointStyle: 'circle', 
+      pointRadius: 8,
+      pointBorderWidth: 2,
+      fill: false,
+        pointStyle: waterTempColors.map(function (color) {
+          if (color === 'green') {
+            return 'circle'; 
+          } else if (color === 'orange') {
+            return 'rectRot';
+          } else {
+            return 'rect'; 
+          }
+        })
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false
+  }
+});
+
+var airTempCtx = document.getElementById('airTempChart').getContext('2d');
+airTempChart = new Chart(airTempCtx, {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'Air Temperature',
+      data: airTemps,
+      borderColor: 'black',
+      pointBackgroundColor: airTempColors,
+      pointStyle: 'rectRot', 
+      pointRadius: 8,
+      pointBorderWidth: 2,
+      fill: false,
+        pointStyle: airTempColors.map(function (color) {
+          if (color === 'green') {
+            return 'circle'; 
+          } else if (color === 'orange') {
+            return 'rectRot'; 
+          } else {
+            return 'rect';
+          }
+        })
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false
+  }
+});
+
+
+var phLevelCtx = document.getElementById('phLevelChart').getContext('2d');
+phLevelChart = new Chart(phLevelCtx, {
+  type: 'line',
+  data: {
+    labels: dates,
+    datasets: [{
+      label: 'pH Level',
+      data: phLevels,
+      borderColor: 'black',
+      pointBackgroundColor: phLevelColors,
+      pointStyle: 'rect', 
+      pointRadius: 8, 
+      pointBorderWidth: 2,
+      fill: false,
+        pointStyle: phLevelColors.map(function (color) {
+          if (color === 'green') {
+            return 'circle'; 
+          } else if (color === 'orange') {
+            return 'rectRot';
+          } else {
+            return 'rect'; 
+          }
+        })
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false
+  }
+});
+
+}
+
+
+
+
+      
+      
+  </script>
+</head>
+<body>
+  <center>
+        <h1>TECHNOPONICS</h1>
+      <a href="table.html" class="button">GO TO TABULAR VIEW</a>
+        
+      <div class="content">
+          
+          <div class="date-range-container">
+            <label for="startDate">Start Date:</label>
+            <input type="date" id="startDate">
+            
+            <label for="endDate">End Date:</label>
+            <input type="date" id="endDate">
+            
+            <button onclick="fetchData()" class="button">Apply</button>
+          </div>
+    
+        <div class="button-container">
+          <button id="downloadButton" onclick="download()" class="button">Download Data from Date Range</button><br><br>
+            <button onclick="getRecent()" class="button" id="toggle">View Most Recent</button> 
+        </div>
+        <div class="chart-container">
+          <canvas id="airTempChart"></canvas>
+        </div>
+    
+        <div class="chart-container">
+          <canvas id="waterTempChart"></canvas>
+        </div>
+    
+        <div class="chart-container">
+          <canvas id="phLevelChart"></canvas>
+        </div>
+    
+      </div>
+  </center>
+  <script>
+    fetchData();
+</script>
+
+
+<div>
+  <h2>Legends</h2>
+  <h3>Temperature</h3>
+  <span style="background-color: blue; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Cold - Temperature below 10°C <br>
+  <span style="background-color: DodgerBlue; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Cold - Temperature between 10°C and 15°C <br>
+  <span style="background-color: green; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></span> Good - Temperature between 15°C and 33°C <br>
+  <span style="background-color: orange; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Hot - Temperature between 33°C and 35°C <br>
+  <span style="background-color: red; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Hot - Temperature above 35°C <br>
+  <br>
+  <h3>pH Level</h3>
+  <span style="background-color: red; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Acidic - pH Level below 5.0 <br>
+  <span style="background-color: orange; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Acidic - pH Level between 5.0 and 6.5 <br>
+  <span style="background-color: green; width: 20px; height: 20px; display: inline-block; border-radius: 50%;"></span> Good - pH Level between 6.5 and 9.0 <br>
+  <span style="background-color: DodgerBlue; width: 20px; height: 20px; display: inline-block; transform: rotate(45deg);"></span> Bad, Too Dirty - pH Level between 9.0 and 10.0 <br>
+  <span style="background-color: SlateBlue; width: 20px; height: 20px; display: inline-block; border-radius: 0;"></span> Very Bad, Extremely Dirty - pH Level above 10.0 <br>
+</div>
+
+</body>
+</html>
