@@ -3,3 +3,5 @@ The software part of my bachelor dissertation, a semi-automated aquaponics syste
 It has 2 separate web applications, online and local. The online one is only for remote monitoring, and the local one is for most of the functions, but has limited css due to the limited resources of the arduino. I also used PHPMailer for emails to save the arduino's resources, it uses the online web host's resources instead
 
 the main arduino code can be improved, since it can sometimes skip functions
+
+learned a bit about proper documentation
