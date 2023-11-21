@@ -8,7 +8,7 @@ Goal was to make use of technology to make agriculture more efficient.
 
 Resulting in growing food being 10% less tideous
 
-With its web applications, it can store data to an SD card and a database, let a user view and download data on their devices, send email notifications, and save/load machine settings from the SD card storage. 
+With its web applications, it can store data to an SD card and an SQL database, let users view and download data with their devices, send email notifications, and save/load machine settings from the SD card storage.
 
 It has 2 separate web applications, online and local. The online one is only for remote monitoring, and the local one is for most of the functions, but has minimal frontend design due to the limited resources of the arduino.
 
