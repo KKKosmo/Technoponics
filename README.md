@@ -1,4 +1,4 @@
-The software part of my bachelor dissertation, a semi-automated aquaponics system, which is a runner-up for the best research project out of 20 projects.
+The software part of my bachelor dissertation, a semi-automated aquaponics system
 
 It uses an Arduino Mega as the microcontroller, and PHP, MySQL, JavaScript, and Chart.js for the web applications.
 
